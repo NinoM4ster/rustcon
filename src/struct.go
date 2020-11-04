@@ -9,17 +9,24 @@ type Data struct {
 	Name       string `json:"Name,omitempty"`
 }
 
+/* {
+  "Message": "857815[857815] was killed by sentry.scientist.static (entity)",
+  "Identifier": 0,
+  "Type": "Generic",
+  "Stacktrace": ""
+} */
+
 // Chat .
 type Chat struct {
-	Channel  int64
-	Message  string
-	UserID   string
-	Username string
-	Color    string
-	Time     uint64
+	Channel  int64  `json:"Channel,omitempty"`
+	Message  string `json:"Message,omitempty"`
+	UserID   string `json:"UserId,omitempty"`
+	Username string `json:"Username,omitempty"`
+	Color    string `json:"Color,omitempty"`
+	Time     uint64 `json:"Time,omitempty"`
 }
 
-/* [-1] {
+/* {
   "Channel": 2,
   "Message": "hi",
   "UserId": "0",

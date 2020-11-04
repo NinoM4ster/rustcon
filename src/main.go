@@ -32,7 +32,8 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	u := url.URL{Scheme: "ws", Host: *addr, Path: "/" + *pass}
-	log.Printf("connecting to %s", u.String())
+	print("connecting to " + u.String())
+	// log.Printf("connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -47,16 +48,30 @@ func main() {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Println("read:", err)
+				print("read: " + err.Error())
 				continue
 			}
+			// fmt.Println("[debug] " + string(message))
 			data := &Data{}
 			err = json.Unmarshal(message, &data)
 			if err != nil {
-				log.Println(err)
+				print(err.Error())
 				continue
 			}
-			log.Printf("[%+v] %+v\n", data.Identifier, data.Message)
+			switch data.Type {
+			case "Generic":
+				print(data.Message)
+				// log.Printf("%s\n", data.Message)
+			case "Chat":
+				chat := &Chat{}
+				err := json.Unmarshal([]byte(data.Message), &chat)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				print(fmt.Sprintf("[%s] %s", chat.Username, chat.Message))
+				// fmt.Printf("[%s] %s\n", chat.Username, chat.Message)
+			}
 		}
 	}()
 
@@ -64,10 +79,13 @@ func main() {
 	for scanner.Scan() {
 		// fmt.Println(scanner.Text())
 		input := scanner.Text()
+		if input == "" {
+			print("")
+		}
 		data := &Data{Message: input, Identifier: counter, Name: "WebRcon"}
 		bytes, err := json.Marshal(data)
 		if err != nil {
-			log.Println(err)
+			print(err.Error())
 			continue
 		}
 		c.WriteMessage(1, bytes)
@@ -75,7 +93,7 @@ func main() {
 	}
 
 	if scanner.Err() != nil {
-		fmt.Println(scanner.Err())
+		print(scanner.Err().Error())
 	}
 
 	// for {
@@ -99,4 +117,10 @@ func main() {
 	// 	}
 	// }
 
+}
+
+func print(s string) {
+	fmt.Print("\r ")
+	fmt.Println("\r" + s)
+	fmt.Print("> ")
 }
