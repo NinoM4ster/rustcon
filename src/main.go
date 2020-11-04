@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/url"
@@ -21,8 +20,6 @@ var (
 )
 
 func init() {
-	flag.Parse()
-	log.SetFlags(0)
 RETRYHOST:
 	fmt.Print("Connect to: ")
 	for scanner.Scan() {
@@ -83,11 +80,12 @@ func main() {
 	}()
 
 	for scanner.Scan() {
+		print("")
 		input := scanner.Text()
 		if input == "" {
-			print("")
+			continue
 		}
-		data := &Data{Message: input, Identifier: counter, Name: "WebRcon"}
+		data := &Data{Message: input, Identifier: counter, Type: "Command", Name: "WebRcon"}
 		err := c.WriteJSON(data)
 		if err != nil {
 			print(err.Error())
@@ -123,7 +121,8 @@ func main() {
 }
 
 func print(s string) {
-	fmt.Print("\r ")
-	fmt.Println("\r" + s)
-	fmt.Print("> ")
+	if s != "" {
+		fmt.Println("\r" + s)
+	}
+	fmt.Print("\r> ")
 }
