@@ -14,46 +14,55 @@ import (
 )
 
 var (
-	addr          = flag.String("h", "localhost:28016", "http service address")
-	pass          = flag.String("p", "", "RCON password")
+	addr    string
+	pass    string
 	counter int64 = 1
+	scanner       = bufio.NewScanner(os.Stdin)
 )
 
 func init() {
 	flag.Parse()
 	log.SetFlags(0)
-	if *pass == "" {
-		flag.Usage()
-		os.Exit(1)
+RETRYHOST:
+	fmt.Print("Connect to: ")
+	for scanner.Scan() {
+		if scanner.Text() == "" {
+			fmt.Println("Empty host.")
+			goto RETRYHOST
+		}
+		addr = scanner.Text()
+		break
+	}
+RETRYPASS:
+	fmt.Print("Password: ")
+	for scanner.Scan() {
+		if scanner.Text() == "" {
+			fmt.Println("Empty password.")
+			goto RETRYPASS
+		}
+		pass = scanner.Text()
+		break
 	}
 }
 
 func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
-	u := url.URL{Scheme: "ws", Host: *addr, Path: "/" + *pass}
+	u := url.URL{Scheme: "ws", Host: addr, Path: "/" + pass}
 	print("connecting to " + u.String())
-	// log.Printf("connecting to %s", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
 	defer c.Close()
-
 	done := make(chan struct{})
 
 	go func() {
 		defer close(done)
 		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				print("read: " + err.Error())
-				continue
-			}
-			// fmt.Println("[debug] " + string(message))
 			data := &Data{}
-			err = json.Unmarshal(message, &data)
+			err := c.ReadJSON(&data)
 			if err != nil {
 				print(err.Error())
 				continue
@@ -61,7 +70,6 @@ func main() {
 			switch data.Type {
 			case "Generic":
 				print(data.Message)
-				// log.Printf("%s\n", data.Message)
 			case "Chat":
 				chat := &Chat{}
 				err := json.Unmarshal([]byte(data.Message), &chat)
@@ -70,26 +78,21 @@ func main() {
 					continue
 				}
 				print(fmt.Sprintf("[%s] %s", chat.Username, chat.Message))
-				// fmt.Printf("[%s] %s\n", chat.Username, chat.Message)
 			}
 		}
 	}()
 
-	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		// fmt.Println(scanner.Text())
 		input := scanner.Text()
 		if input == "" {
 			print("")
 		}
 		data := &Data{Message: input, Identifier: counter, Name: "WebRcon"}
-		bytes, err := json.Marshal(data)
+		err := c.WriteJSON(data)
 		if err != nil {
 			print(err.Error())
 			continue
 		}
-		c.WriteMessage(1, bytes)
-		// fmt.Print("> ")
 	}
 
 	if scanner.Err() != nil {
