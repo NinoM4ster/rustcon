@@ -39,14 +39,16 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	u := url.URL{Scheme: "ws", Host: addr, Path: "/" + pass}
-	print("connecting to " + u.String())
+	print("Connecting to " + u.String() + "...")
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		print(err.Error())
+		os.Exit(1)
 	}
 	defer c.Close()
 	done := make(chan struct{})
+	print("Connected.")
 
 	go func() {
 		defer close(done)
