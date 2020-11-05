@@ -13,32 +13,25 @@ import (
 )
 
 var (
-	addr    string
-	pass    string
-	counter int64 = 1
-	scanner       = bufio.NewScanner(os.Stdin)
+	addr, pass string
+	counter    int64 = 1
+	scanner          = bufio.NewScanner(os.Stdin)
 )
 
 func init() {
 RETRYHOST:
 	fmt.Print("Connect to: ")
-	for scanner.Scan() {
-		if scanner.Text() == "" {
-			fmt.Println("Empty host.")
-			goto RETRYHOST
-		}
-		addr = scanner.Text()
-		break
+	fmt.Scanln(&addr)
+	if addr == "" {
+		fmt.Println("Empty host.")
+		goto RETRYHOST
 	}
 RETRYPASS:
 	fmt.Print("Password: ")
-	for scanner.Scan() {
-		if scanner.Text() == "" {
-			fmt.Println("Empty password.")
-			goto RETRYPASS
-		}
-		pass = scanner.Text()
-		break
+	fmt.Scanln(&pass)
+	if pass == "" {
+		fmt.Println("Empty password.")
+		goto RETRYPASS
 	}
 }
 
